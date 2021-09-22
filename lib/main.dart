@@ -1,44 +1,30 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:movie_database/movie.dart';
+/// import http package and make an object http.
+import 'package:http/http.dart' as http;
+import 'package:movie_database/movie_description.dart';
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.purple,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Find My Movie'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -46,68 +32,171 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  /// Add the future method which has returns the List<Movies>
+  /// 1. Uri.Parse to get the url in proper encoded format.
+  /// 2. Uri.encode full to handle movies with space in it.
+  /// 3. Explain async and await functionality
+  /// 4. Need of jsonDecode method.
+  /// 5. Push all jsonData fetched in MovieList.
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  /// Search functionality
+  TextEditingController _movieNameController = new TextEditingController();
+
+
+
+
+  Future<List<Movie>> _getMovies(var movieName) async {
+    ///Added after 2.2
+    String movieURL = Uri.encodeFull(
+        'https://api.themoviedb.org/3/search/movie?api_key=753d7942043deaba39f0e512331e2414&language=en-US&query=' +
+            movieName +
+            '&page=1&include_adult=false&sort_by=popularity.desc');
+
+    /// Removed after 2.2
+    /// print(movieURL);
+    var url = Uri.parse(movieURL);
+
+    /// 2.3 Tell about Asynchronous programming.
+    var data = await http.get(url);
+
+    /// 2.4
+    /// Uncomment this line to see the difference.
+    /// print(data);+
+    /// if we print this line we get and output of instance of response.
+    /// To decode it into json use jsonDecode method.
+    ///
+    var jsonData = jsonDecode(data.body);
+
+    /// 2.4 continued. See the result of using jsonDecode method.
+    print(jsonData["results"]);
+
+    List<Movie> movies = [];
+
+    /// 2.5 Pushing data received from jsonData[results] to movie list variable.
+    /// Sometimes posterPath is null so we need to put a null check or placeholder image
+    var posterPathNotFound = "https://www.publicdomainpictures.net/pictures/280000/velka/not-found-image-15383864787lu.jpg";
+    for (var movie in jsonData["results"]) {
+      var poster;
+      if(movie["poster_path"] == null)
+        poster = posterPathNotFound;
+      else
+        poster = "https://image.tmdb.org/t/p/w500" + movie["poster_path"];
+      Movie movieObj = Movie(
+          id: movie["id"],
+          originalTitle: movie["title"],
+          overview: movie["overview"],
+          posterPath: poster);
+      movies.add(movieObj);
+      print(poster);
+    }
+    return movies;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    /// Remove this last line from version 3
+    /// _getMovies("Jab we met");
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        /*
+              GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  //number of columns
+                      crossAxisCount: 2,
+                  ),
+                  itemCount: 30,
+                  itemBuilder: (BuildContext context, int index) {
+                      return Card(
+                          color: Colors.amber,
+                          child: Center(child: Text((index+1).toString())),
+                      );
+                  }
+              ),
+          */
+
+
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: 300,
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: "Enter your movie",
+                      ),
+                      controller: _movieNameController,
+                    ),
+                  ),
+                  ElevatedButton(onPressed: () {
+                    setState(() {
+                      print(_movieNameController.text);
+                      //_getMovies(_movieNameController.text);
+                    });
+
+                  },
+                      child: Text("Search"))
+                ],
+              ),
+
+
+              SizedBox(
+                height: 600,
+                /// 3.1 Add future builder to incorporate the future method
+                ///     add add to the child method.
+                child: FutureBuilder(
+                  future: _getMovies(_movieNameController.text),
+                  /// 3.2 Builder will have context and AsyncSnapshot which will be
+                  ///     returned by the future.
+                  builder: (BuildContext context, AsyncSnapshot snapshot) {
+                    /// 3.3 Builder to return GridView.builder.
+                    return GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          //number of columns
+                          crossAxisCount: 2,
+                        ),
+                        /// 3.4 itemCount -> check for null check. Use the ternary
+                        ///     operator for the null check. if null return 0 or else
+                        ///     add the snapshot.data.length
+                        itemCount: snapshot.data==null?0:snapshot.data.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return Card(
+                            semanticContainer: true,
+                            clipBehavior: Clip.antiAliasWithSaveLayer,
+                            color: Colors.amber,
+                            /// 3.5 Remove the child method and replace it with new method.
+                            /// child: Center(child: Text((snapshot.data[index].originalTitle))),
+                            child : Column(
+                              children: [
+                                SizedBox(
+                                  height: 130,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Image.network(snapshot.data[index].posterPath,fit: BoxFit.fitHeight,),
+                                  ),
+                                ),
+                                ElevatedButton(onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MovieDescription(movie:snapshot.data[index]),
+                                    ),
+                                  );
+                                }, child: Text("Know more"))
+                              ],
+                            ),
+
+                          );
+                        });
+                  },
+                ),
+              ),
+            ],
+          )),
     );
   }
+
 }
