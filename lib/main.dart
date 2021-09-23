@@ -97,105 +97,104 @@ class _MyHomePageState extends State<MyHomePage> {
     /// Remove this last line from version 3
     /// _getMovies("Jab we met");
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        /*
-              GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  //number of columns
-                      crossAxisCount: 2,
-                  ),
-                  itemCount: 30,
-                  itemBuilder: (BuildContext context, int index) {
-                      return Card(
-                          color: Colors.amber,
-                          child: Center(child: Text((index+1).toString())),
-                      );
-                  }
-              ),
-          */
-
-
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 300,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Enter your movie",
-                      ),
-                      controller: _movieNameController,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          /*
+                GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    //number of columns
+                        crossAxisCount: 2,
                     ),
-                  ),
-                  ElevatedButton(onPressed: () {
-                    setState(() {
-                      print(_movieNameController.text);
-                      //_getMovies(_movieNameController.text);
-                    });
+                    itemCount: 30,
+                    itemBuilder: (BuildContext context, int index) {
+                        return Card(
+                            color: Colors.amber,
+                            child: Center(child: Text((index+1).toString())),
+                        );
+                    }
+                ),
+            */
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height,
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: "Enter your movie",
+                            ),
+                            controller: _movieNameController,
+                          ),
+                        ),
+                      ElevatedButton(onPressed: () {
+                        setState(() {
+                          print(_movieNameController.text);
+                          //_getMovies(_movieNameController.text);
+                        });
 
-                  },
-                      child: Text("Search"))
+                      },
+                          child: Text("Search"))
+                    ],
+                  ),
+                  Expanded(
+                    child:  FutureBuilder(
+                        future: _getMovies(_movieNameController.text),
+                        /// 3.2 Builder will have context and AsyncSnapshot which will be
+                        ///     returned by the future.
+                        builder: (BuildContext context, AsyncSnapshot snapshot) {
+                          /// 3.3 Builder to return GridView.builder.
+                          return GridView.builder(
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                //number of columns
+                                crossAxisCount: 2,
+                              ),
+                              /// 3.4 itemCount -> check for null check. Use the ternary
+                              ///     operator for the null check. if null return 0 or else
+                              ///     add the snapshot.data.length
+                              itemCount: snapshot.data==null?0:snapshot.data.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                return Card(
+                                  semanticContainer: true,
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  color: Colors.amber,
+                                  /// 3.5 Remove the child method and replace it with new method.
+                                  /// child: Center(child: Text((snapshot.data[index].originalTitle))),
+                                  child : Column(
+                                    children: [
+                                      SizedBox(
+                                        height: 120,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Image.network(snapshot.data[index].posterPath,fit: BoxFit.fitHeight,),
+                                        ),
+                                      ),
+                                      ElevatedButton(onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => MovieDescription(movie:snapshot.data[index]),
+                                          ),
+                                        );
+                                      }, child: Text("Know more"))
+                                    ],
+                                  ),
+
+                                );
+                              });
+                        },
+                      ),
+                  ),
                 ],
               ),
-
-
-              SizedBox(
-                height: 600,
-                /// 3.1 Add future builder to incorporate the future method
-                ///     add add to the child method.
-                child: FutureBuilder(
-                  future: _getMovies(_movieNameController.text),
-                  /// 3.2 Builder will have context and AsyncSnapshot which will be
-                  ///     returned by the future.
-                  builder: (BuildContext context, AsyncSnapshot snapshot) {
-                    /// 3.3 Builder to return GridView.builder.
-                    return GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          //number of columns
-                          crossAxisCount: 2,
-                        ),
-                        /// 3.4 itemCount -> check for null check. Use the ternary
-                        ///     operator for the null check. if null return 0 or else
-                        ///     add the snapshot.data.length
-                        itemCount: snapshot.data==null?0:snapshot.data.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return Card(
-                            semanticContainer: true,
-                            clipBehavior: Clip.antiAliasWithSaveLayer,
-                            color: Colors.amber,
-                            /// 3.5 Remove the child method and replace it with new method.
-                            /// child: Center(child: Text((snapshot.data[index].originalTitle))),
-                            child : Column(
-                              children: [
-                                SizedBox(
-                                  height: 130,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Image.network(snapshot.data[index].posterPath,fit: BoxFit.fitHeight,),
-                                  ),
-                                ),
-                                ElevatedButton(onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => MovieDescription(movie:snapshot.data[index]),
-                                    ),
-                                  );
-                                }, child: Text("Know more"))
-                              ],
-                            ),
-
-                          );
-                        });
-                  },
-                ),
-              ),
-            ],
-          )),
+            )),
+      ),
     );
   }
 
